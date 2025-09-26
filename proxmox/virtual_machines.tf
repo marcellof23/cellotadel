@@ -20,12 +20,11 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
 
   network_device {
     bridge = "vmbr0"
-    model = "virtio"
   }
 
   disk {
     datastore_id = "local-zfs"
-    file_id      = proxmox_virtual_environment_download_file.talos_metal_image.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
     size         = 20
@@ -37,6 +36,15 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
 
   initialization {
     datastore_id = "local-zfs"
+    ip_config {
+      ipv4 {
+        address = "${var.talos_cp_01_ip_addr}/24"
+        gateway = var.default_gateway
+      }
+      ipv6 {
+        address = "dhcp"
+      }
+    }
   }
 }
 
@@ -68,7 +76,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
 
   disk {
     datastore_id = "local-zfs"
-    file_id      = proxmox_virtual_environment_download_file.talos_metal_image.id
+    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
     size         = 20
@@ -84,6 +92,9 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
       ipv4 {
         address = "${var.talos_worker_01_ip_addr}/24"
         gateway = var.default_gateway
+      }
+      ipv6 {
+        address = "dhcp"
       }
     }
   }

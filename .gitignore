@@ -46,3 +46,4 @@ terraform.rc
 .envrc
 .DS_Store
 *.iso
+*tfplan

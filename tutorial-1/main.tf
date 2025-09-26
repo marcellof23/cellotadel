@@ -19,7 +19,7 @@ provider "proxmox" {
   pm_tls_insecure = true
 }
 
-# Creates a proxmox_vm_qemu entity named blog_demo_test
+# # Creates a proxmox_vm_qemu entity named first_nas_test
 resource "proxmox_vm_qemu" "first_nas_test" {
   name = "test_vm${count.index + 1}" # count.index starts at 0
   #name = "test-vm-01"
@@ -62,7 +62,6 @@ resource "proxmox_vm_qemu" "first_nas_test" {
 
   lifecycle {
     ignore_changes = [
-      network,
     ]
   }
   #provisioner "local-exec" {
