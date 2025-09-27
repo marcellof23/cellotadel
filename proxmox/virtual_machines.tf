@@ -2,7 +2,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   name        = "talos-cp-01"
   description = "Managed by Terraform"
   tags        = ["terraform"]
-  node_name   = "pve"
+  node_name   = var.node
   on_boot     = true
 
   cpu {
@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   }
 
   agent {
-    enabled = false
+    enabled = true
   }
 
   network_device {
@@ -53,7 +53,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
   name        = "talos-worker-01"
   description = "Managed by Terraform"
   tags        = ["terraform"]
-  node_name   = "pve"
+  node_name   = var.node
   on_boot     = true
 
   cpu {
@@ -66,12 +66,11 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
   }
 
   agent {
-    enabled = false
+    enabled = true
   }
 
   network_device {
     bridge = "vmbr0"
-    model = "virtio"
   }
 
   disk {
