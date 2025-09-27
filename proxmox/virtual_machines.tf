@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   }
 
   agent {
-    enabled = true
+    enabled = false
   }
 
   network_device {
@@ -66,7 +66,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
   }
 
   agent {
-    enabled = true
+    enabled = false
   }
 
   network_device {
