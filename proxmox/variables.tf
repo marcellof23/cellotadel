@@ -41,5 +41,3 @@ variable "pve_password" {
   type        = string
   sensitive   = true
 }
-
-

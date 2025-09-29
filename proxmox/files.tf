@@ -8,10 +8,10 @@ locals {
 resource "proxmox_virtual_environment_download_file" "talos_nocloud_image" {
   content_type            = "iso"
   datastore_id            = "local"
-  node_name               = "pve"
+  node_name               = var.node
 
-  file_name               = "nocloud-amd64.iso"
+  file_name               = "nocloud-amd64-${local.talos.version}.iso"
   url                     = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${local.talos.version}/nocloud-amd64.iso"
   overwrite               = false
-  verify                  = false
+  overwrite_unmanaged     = true
 }

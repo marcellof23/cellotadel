@@ -10,3 +10,7 @@ terraform {
     }
   }
 }
+
+provider "talos" {
+  # Configuration options
+}

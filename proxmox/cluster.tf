@@ -1,4 +1,5 @@
-resource "talos_machine_secrets" "machine_secrets" {}
+resource "talos_machine_secrets" "machine_secrets" {
+}
 
 data "talos_client_configuration" "talosconfig" {
   cluster_name         = var.cluster_name
@@ -36,12 +37,6 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
   node                        = var.talos_worker_01_ip_addr
 }
 
-resource "talos_machine_bootstrap" "bootstrap" {
-  depends_on           = [ talos_machine_configuration_apply.cp_config_apply ]
-  client_configuration = talos_machine_secrets.machine_secrets.client_configuration
-  node                 = var.talos_cp_01_ip_addr
-}
-
 data "talos_cluster_health" "health" {
   depends_on           = [ talos_machine_configuration_apply.cp_config_apply, talos_machine_configuration_apply.worker_config_apply ]
   client_configuration = data.talos_client_configuration.talosconfig.client_configuration
@@ -51,7 +46,7 @@ data "talos_cluster_health" "health" {
 }
 
 data "talos_cluster_kubeconfig" "kubeconfig" {
-  depends_on           = [ talos_machine_bootstrap.bootstrap, data.talos_cluster_health.health ]
+  depends_on           = [ data.talos_cluster_health.health ]
   client_configuration = talos_machine_secrets.machine_secrets.client_configuration
   node                 = var.talos_cp_01_ip_addr
 }
