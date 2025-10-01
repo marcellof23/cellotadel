@@ -37,7 +37,7 @@ variable "pve_user" {
 }
 
 variable "pve_password" {
-  description = "Proxmox passsword"
+  description = "Proxmox password"
   type        = string
   sensitive   = true
 }

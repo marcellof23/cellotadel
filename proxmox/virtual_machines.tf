@@ -18,6 +18,8 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
     enabled = false
   }
 
+  stop_on_destroy = true
+
   network_device {
     bridge = "vmbr0"
   }
@@ -68,6 +70,8 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
   agent {
     enabled = false
   }
+
+  stop_on_destroy = true
 
   network_device {
     bridge = "vmbr0"

@@ -20,6 +20,15 @@ resource "talos_machine_configuration_apply" "cp_config_apply" {
   machine_configuration_input = data.talos_machine_configuration.machineconfig_cp.machine_configuration
   count                       = 1
   node                        = var.talos_cp_01_ip_addr
+  config_patches = [
+    yamlencode({
+      machine = {
+        install = {
+          disk = "/dev/vda"
+        }
+      }
+    })
+  ]
 }
 
 data "talos_machine_configuration" "machineconfig_worker" {
@@ -35,12 +44,22 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
   machine_configuration_input = data.talos_machine_configuration.machineconfig_worker.machine_configuration
   count                       = 1
   node                        = var.talos_worker_01_ip_addr
+  config_patches = [
+    yamlencode({
+      machine = {
+        install = {
+          disk = "/dev/vda"
+        }
+      }
+    })
+  ]
 }
 
 resource "talos_machine_bootstrap" "bootstrap" {
-  depends_on           = [ talos_machine_configuration_apply.cp_config_apply ]
+  depends_on           = [ talos_machine_configuration_apply.cp_config_apply]
   client_configuration = talos_machine_secrets.machine_secrets.client_configuration
   node                 = var.talos_cp_01_ip_addr
+  timeouts             = { create = "45s" }
 }
 
 data "talos_cluster_health" "health" {
@@ -49,9 +68,10 @@ data "talos_cluster_health" "health" {
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
   worker_nodes         = [ var.talos_worker_01_ip_addr ]
   endpoints            = data.talos_client_configuration.talosconfig.endpoints
+  timeouts             = { read = "45s" }
 }
 
-data "talos_cluster_kubeconfig" "kubeconfig" {
+resource "talos_cluster_kubeconfig" "kubeconfig" {
   depends_on           = [ talos_machine_bootstrap.bootstrap, data.talos_cluster_health.health ]
   client_configuration = talos_machine_secrets.machine_secrets.client_configuration
   node                 = var.talos_cp_01_ip_addr
@@ -63,6 +83,6 @@ output "talosconfig" {
 }
 
 output "kubeconfig" {
-  value = data.talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
+  value = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
   sensitive = true
 }
