@@ -3,7 +3,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   description = "Managed by Terraform"
   tags        = ["terraform"]
   node_name   = var.node
-  on_boot     = true
+  on_boot     = false
 
   cpu {
     cores = 2
@@ -56,7 +56,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
   description = "Managed by Terraform"
   tags        = ["terraform"]
   node_name   = var.node
-  on_boot     = true
+  on_boot     = false
 
   cpu {
     cores = 4

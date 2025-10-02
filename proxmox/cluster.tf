@@ -55,20 +55,47 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
   ]
 }
 
+resource "null_resource" "wait_bootstrap" {
+  depends_on = [proxmox_virtual_environment_vm.talos_cp_01]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      counter=0
+      while [ $counter -lt 24 ] ; do
+        if nc -z "${var.talos_cp_01_ip_addr}" 50000 ; then
+          echo "Talos API is reachable on ${var.talos_cp_01_ip_addr}:50000..."
+          sleep 30   # Delay to ensure Talos is fully up
+          exit 0
+        fi
+        echo "Waiting for Talos API on ${var.talos_cp_01_ip_addr}:50000..."
+        sleep 5
+        counter=$(($counter + 1))
+      done
+      echo "Timeout reached. Talos API is not reachable."
+      exit 1
+    EOT
+  }
+
+  triggers = {
+    talos_node_ip = var.talos_cp_01_ip_addr
+  }
+}
+
 resource "talos_machine_bootstrap" "bootstrap" {
-  depends_on           = [ talos_machine_configuration_apply.cp_config_apply]
+  depends_on           = [ null_resource.wait_bootstrap ]
   client_configuration = talos_machine_secrets.machine_secrets.client_configuration
   node                 = var.talos_cp_01_ip_addr
-  timeouts             = { create = "45s" }
+  timeouts             = { create = "60s" }
 }
 
 data "talos_cluster_health" "health" {
-  depends_on           = [ talos_machine_configuration_apply.cp_config_apply, talos_machine_configuration_apply.worker_config_apply ]
+  depends_on           = [ null_resource.wait_bootstrap ]
+  skip_kubernetes_checks = true
   client_configuration = data.talos_client_configuration.talosconfig.client_configuration
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
   worker_nodes         = [ var.talos_worker_01_ip_addr ]
   endpoints            = data.talos_client_configuration.talosconfig.endpoints
-  timeouts             = { read = "45s" }
+  timeouts             = { read = "90s" }
 }
 
 resource "talos_cluster_kubeconfig" "kubeconfig" {
