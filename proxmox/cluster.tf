@@ -51,7 +51,8 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
           disk = "/dev/vda"
         }
       }
-    })
+    }),
+    templatefile("./templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
   ]
 }
 
@@ -109,13 +110,31 @@ output "talosconfig" {
   sensitive = true
 }
 
-resource "local_file" "talosconfig_file" {
-  filename = "${pathexpand("~/.talos/config")}"  # Path to ~/.talos/config
-  content  = data.talos_client_configuration.talosconfig.talos_config
-  sensitive_content = true  # Prevent the content from being shown in logs
-}
-
 output "kubeconfig" {
   value = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
   sensitive = true
+}
+
+# Custom Script for Configuration
+resource "null_resource" "run_custom_script" {
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ~/.kube ~/.talos
+      terraform output -raw kubeconfig > ~/.kube/config
+      terraform output -raw talosconfig > ~/.talos/config
+      chmod 600 ~/.kube/config ~/.talos/config
+    EOT
+  }
+
+  triggers = {
+    kubeconfig  = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
+    talosconfig = data.talos_client_configuration.talosconfig.talos_config
+    timestamp   = timestamp() # Ensure the resource always detects changes
+  }
+
+  depends_on = [
+    talos_cluster_kubeconfig.kubeconfig,
+    data.talos_client_configuration.talosconfig,
+    data.talos_cluster_health.health
+  ]
 }

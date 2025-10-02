@@ -9,6 +9,11 @@ variable "default_gateway" {
   default = "192.168.0.1"
 }
 
+variable "cp_vip" {
+  type    = string
+  default = "192.168.0.202"
+}
+
 variable "talos_cp_01_ip_addr" {
   type    = string
   default = "192.168.0.205"
