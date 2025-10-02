@@ -109,6 +109,12 @@ output "talosconfig" {
   sensitive = true
 }
 
+resource "local_file" "talosconfig_file" {
+  filename = "${pathexpand("~/.talos/config")}"  # Path to ~/.talos/config
+  content  = data.talos_client_configuration.talosconfig.talos_config
+  sensitive_content = true  # Prevent the content from being shown in logs
+}
+
 output "kubeconfig" {
   value = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
   sensitive = true
