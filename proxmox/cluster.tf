@@ -27,7 +27,8 @@ resource "talos_machine_configuration_apply" "cp_config_apply" {
           disk = "/dev/vda"
         }
       }
-    })
+    }),
+    templatefile("./templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
   ]
 }
 
@@ -51,8 +52,7 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
           disk = "/dev/vda"
         }
       }
-    }),
-    templatefile("./templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
+    })
   ]
 }
 
