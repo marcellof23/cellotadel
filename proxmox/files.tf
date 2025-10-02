@@ -1,7 +1,7 @@
 
 locals {
   talos = {
-    version = "v1.9.5"
+    version = "v1.11.1"
   }
 }
 
