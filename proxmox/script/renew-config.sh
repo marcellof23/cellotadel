@@ -1,0 +1,1 @@
+terraform output -raw talosconfig > ~/.talos/config

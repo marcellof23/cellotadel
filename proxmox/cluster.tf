@@ -98,7 +98,7 @@ data "talos_cluster_health" "health" {
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
   worker_nodes         = [ var.talos_worker_01_ip_addr ]
   endpoints            = data.talos_client_configuration.talosconfig.endpoints
-  timeouts             = { read = "90s" }
+  timeouts             = { read = "30s" }
 }
 
 resource "talos_cluster_kubeconfig" "kubeconfig" {
