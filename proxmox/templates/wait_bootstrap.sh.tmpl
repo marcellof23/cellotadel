@@ -1,0 +1,16 @@
+#!/bin/bash
+# This script waits for the Talos API to bootstraps the node.
+      
+counter=0
+while [ $counter -lt 24 ] ; do
+    if nc -z "${talos_ip}" 50000 ; then
+        echo "Talos API is reachable on ${talos_ip}:50000..."
+        sleep 30   # Delay to ensure Talos is fully up
+        exit 0
+    fi
+    echo "Waiting for Talos API on ${talos_ip}:50000..."
+    sleep 5
+    counter=$(($counter + 1))
+done
+echo "Timeout reached. Talos API is not reachable."
+exit 1

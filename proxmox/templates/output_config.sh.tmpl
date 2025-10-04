@@ -1,0 +1,8 @@
+#!/bin/bash
+# This script for output the kubeconfig and talosconfig to the ~/.kube and ~/.talos directories.
+
+mkdir -p ~/.kube ~/.talos
+terraform output -raw kubeconfig > ~/.kube/config
+sleep 15
+terraform output -raw talosconfig > ~/.talos/config
+chmod 600 ~/.kube/config ~/.talos/config

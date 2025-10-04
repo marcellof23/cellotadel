@@ -22,7 +22,7 @@ resource "talos_machine_configuration_apply" "cp_config_apply" {
   count                       = 1
   node                        = var.talos_cp_01_ip_addr
   config_patches = [
-    templatefile("./templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
+    templatefile("${path.module}/templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
   ]
 }
 
@@ -40,7 +40,7 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
   count                       = 1
   node                        = var.talos_worker_01_ip_addr
   config_patches = [
-    file("./templates/workernetwork.yaml.tmpl")
+    file("${path.module}/templates/workernetwork.yaml.tmpl")
   ]
 }
 
@@ -48,21 +48,10 @@ resource "null_resource" "wait_bootstrap" {
   depends_on = [proxmox_virtual_environment_vm.talos_cp_01]
 
   provisioner "local-exec" {
-    command = <<EOT
-      counter=0
-      while [ $counter -lt 24 ] ; do
-        if nc -z "${var.talos_cp_01_ip_addr}" 50000 ; then
-          echo "Talos API is reachable on ${var.talos_cp_01_ip_addr}:50000..."
-          sleep 30   # Delay to ensure Talos is fully up
-          exit 0
-        fi
-        echo "Waiting for Talos API on ${var.talos_cp_01_ip_addr}:50000..."
-        sleep 5
-        counter=$(($counter + 1))
-      done
-      echo "Timeout reached. Talos API is not reachable."
-      exit 1
-    EOT
+    interpreter = ["/bin/bash", "-c"]
+    command = templatefile("${path.module}/templates/wait_bootstrap.sh.tmpl", {
+      talos_ip = var.talos_cp_01_ip_addr
+    })
   }
 
   triggers = {
@@ -104,14 +93,10 @@ output "kubeconfig" {
 }
 
 # Custom Script for Configuration
-resource "null_resource" "run_custom_script" {
+resource "null_resource" "output_config" {
   provisioner "local-exec" {
-    command = <<EOT
-      mkdir -p ~/.kube ~/.talos
-      terraform output -raw kubeconfig > ~/.kube/config
-      terraform output -raw talosconfig > ~/.talos/config
-      chmod 600 ~/.kube/config ~/.talos/config
-    EOT
+    interpreter = ["/bin/bash", "-c"]
+    command = file("${path.module}/templates/output_config.sh.tmpl")
   }
 
   triggers = {
