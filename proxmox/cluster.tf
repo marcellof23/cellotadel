@@ -53,7 +53,8 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
           disk = "/dev/vda"
         }
       }
-    })
+    }),
+    templatefile("./templates/workernetwork.yaml.tmpl")
   ]
 }
 
