@@ -97,12 +97,16 @@ resource "null_resource" "output_config" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command = file("${path.module}/templates/output_config.sh.tmpl")
+
+    environment = {
+      TF_VAR_KUBECONFIG_DATA  = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
+      TF_VAR_TALOSCONFIG_DATA = data.talos_client_configuration.talosconfig.talos_config
+    }
   }
 
   triggers = {
-    kubeconfig  = talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw
-    talosconfig = data.talos_client_configuration.talosconfig.talos_config
-    timestamp   = timestamp() # Ensure the resource always detects changes
+    kubeconfig_sha  = sha256(talos_cluster_kubeconfig.kubeconfig.kubeconfig_raw)
+    talosconfig_sha = sha256(data.talos_client_configuration.talosconfig.talos_config)
   }
 
   depends_on = [
