@@ -46,3 +46,8 @@ variable "pve_password" {
   type        = string
   sensitive   = true
 }
+
+variable "kubernetes_version" {
+  type    = string
+  default = "1.32.0"
+}

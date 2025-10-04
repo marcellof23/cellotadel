@@ -12,6 +12,7 @@ data "talos_machine_configuration" "machineconfig_cp" {
   cluster_endpoint = "https://${var.talos_cp_01_ip_addr}:6443"
   machine_type     = "controlplane"
   machine_secrets  = talos_machine_secrets.machine_secrets.machine_secrets
+  kubernetes_version = var.kubernetes_version
 }
 
 resource "talos_machine_configuration_apply" "cp_config_apply" {
