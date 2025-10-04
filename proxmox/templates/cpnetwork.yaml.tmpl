@@ -3,6 +3,10 @@ machine:
     interfaces:
       - deviceSelector:
           busPath: "0*"
-        dhcp: true
+        addresses:
+          - 192.168.0.205/24
         vip:
           ip: ${cpip}
+    nameservers:
+      - 8.8.8.8
+      - 8.8.4.4
