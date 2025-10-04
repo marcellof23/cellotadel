@@ -54,7 +54,7 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
         }
       }
     }),
-    templatefile("./templates/workernetwork.yaml.tmpl")
+    file("./templates/workernetwork.yaml.tmpl")
   ]
 }
 
