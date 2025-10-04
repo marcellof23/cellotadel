@@ -78,7 +78,7 @@ resource "talos_machine_bootstrap" "bootstrap" {
 }
 
 data "talos_cluster_health" "health" {
-  depends_on           = [ talos_machine_configuration_apply.cp_config_apply, talos_machine_configuration_apply.worker_config_apply ]
+  depends_on           = [ null_resource.wait_bootstrap ]
   skip_kubernetes_checks = true
   client_configuration = data.talos_client_configuration.talosconfig.client_configuration
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
