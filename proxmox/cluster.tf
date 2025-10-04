@@ -22,13 +22,6 @@ resource "talos_machine_configuration_apply" "cp_config_apply" {
   count                       = 1
   node                        = var.talos_cp_01_ip_addr
   config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk = "/dev/vda"
-        }
-      }
-    }),
     templatefile("./templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
   ]
 }
@@ -47,13 +40,6 @@ resource "talos_machine_configuration_apply" "worker_config_apply" {
   count                       = 1
   node                        = var.talos_worker_01_ip_addr
   config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk = "/dev/vda"
-        }
-      }
-    }),
     file("./templates/workernetwork.yaml.tmpl")
   ]
 }
@@ -92,13 +78,13 @@ resource "talos_machine_bootstrap" "bootstrap" {
 }
 
 data "talos_cluster_health" "health" {
-  depends_on           = [ null_resource.wait_bootstrap ]
+  depends_on           = [ talos_machine_configuration_apply.cp_config_apply, talos_machine_configuration_apply.worker_config_apply ]
   skip_kubernetes_checks = true
   client_configuration = data.talos_client_configuration.talosconfig.client_configuration
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
   worker_nodes         = [ var.talos_worker_01_ip_addr ]
   endpoints            = data.talos_client_configuration.talosconfig.endpoints
-  timeouts             = { read = "30s" }
+  timeouts             = { read = "180s" }
 }
 
 resource "talos_cluster_kubeconfig" "kubeconfig" {
