@@ -1,5 +1,6 @@
 #!/bin/bash
 
+rm -rf terraform.tfstate terraform.tfstate.backup
 # List of VM IDs to destroy
 VM_IDS=("100" "101")
 
