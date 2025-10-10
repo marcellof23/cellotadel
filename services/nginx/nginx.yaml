@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nginx-deployment
 spec:
-  replicas: 1 # Run two instances of NGINX
+  replicas: 1 
   selector:
     matchLabels:
       app: nginx
@@ -23,10 +23,8 @@ kind: Service
 metadata:
   name: nginx-service
 spec:
-  # This is the key part for this method
   type: NodePort
   selector:
-    # This MUST match the labels in the Deployment's template
     app: nginx
   ports:
     - protocol: TCP
