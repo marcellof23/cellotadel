@@ -1,0 +1,23 @@
+# nginx-ingress-tailscale.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-tailscale-ingress
+spec:
+  # This tells Kubernetes to use the Tailscale operator
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+      # Use a simple name. Tailscale will make it globally unique.
+      - my-nginx-app
+  rules:
+    - host: "my-nginx-app"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx-service # The name of your NGINX app's service
+                port:
+                  number: 80
