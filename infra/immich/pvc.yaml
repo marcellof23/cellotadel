@@ -1,0 +1,24 @@
+# immich-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce # Longhorn supports this
+  storageClassName: longhorn # This tells Kubernetes to use Longhorn
+  resources:
+    requests:
+      storage: 5Gi # Adjust size as needed for your photo library
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi # Adjust size as needed for your database
