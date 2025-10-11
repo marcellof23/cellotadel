@@ -1,0 +1,6 @@
+customization:
+  systemExtensions:
+    officialExtensions:
+      - image: ghcr.io/siderolabs/iscsi-tools
+      - image: ghcr.io/siderolabs/util-linux-tools
+      
