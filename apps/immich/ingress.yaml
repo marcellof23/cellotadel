@@ -6,9 +6,9 @@ spec:
   ingressClassName: tailscale
   tls:
     - hosts:
-      - drive
+      - drive-app
   rules:
-  - host: "drive"
+  - host: "drive-app"
     http:
       paths:
       - path: /
@@ -17,5 +17,4 @@ spec:
           service:
             name: immich-server-svc
             port:
-              name: http
-
+              number: 80
