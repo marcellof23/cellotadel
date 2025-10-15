@@ -24,6 +24,16 @@ variable "talos_worker_01_ip_addr" {
   default = "192.168.0.206"
 }
 
+variable "talos_worker_02_ip_addr" {
+  type    = string
+  default = "192.168.0.207"
+}
+
+variable "talos_worker_03_ip_addr" {
+  type    = string
+  default = "192.168.0.208"
+}
+
 variable "node" {
   description = "Proxmox node"
   type        = string

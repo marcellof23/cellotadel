@@ -25,7 +25,7 @@ resource "talos_machine_configuration_apply" "cp_config_apply" {
     templatefile("${path.module}/templates/cpnetwork.yaml.tmpl", { cpip = var.cp_vip })
   ]
 }
-
+# Worker Machine Configurations
 data "talos_machine_configuration" "machineconfig_worker" {
   cluster_name     = var.cluster_name
   cluster_endpoint = "https://${var.talos_cp_01_ip_addr}:6443"
@@ -33,12 +33,47 @@ data "talos_machine_configuration" "machineconfig_worker" {
   machine_secrets  = talos_machine_secrets.machine_secrets.machine_secrets
 }
 
+data "talos_machine_configuration" "machineconfig_worker_02" {
+  cluster_name     = var.cluster_name
+  cluster_endpoint = "https://${var.talos_cp_01_ip_addr}:6443"
+  machine_type     = "worker"
+  machine_secrets  = talos_machine_secrets.machine_secrets.machine_secrets
+}
+
+data "talos_machine_configuration" "machineconfig_worker_03" {
+  cluster_name     = var.cluster_name
+  cluster_endpoint = "https://${var.talos_cp_01_ip_addr}:6443"
+  machine_type     = "worker"
+  machine_secrets  = talos_machine_secrets.machine_secrets.machine_secrets
+}
+
+# Apply Worker Configurations
 resource "talos_machine_configuration_apply" "worker_config_apply" {
   depends_on                  = [ proxmox_virtual_environment_vm.talos_worker_01 ]
   client_configuration        = talos_machine_secrets.machine_secrets.client_configuration
   machine_configuration_input = data.talos_machine_configuration.machineconfig_worker.machine_configuration
   count                       = 1
   node                        = var.talos_worker_01_ip_addr
+  config_patches = [
+    file("${path.module}/templates/workernetwork.yaml.tmpl")
+  ]
+}
+
+resource "talos_machine_configuration_apply" "worker_config_apply_02" {
+  depends_on                  = [proxmox_virtual_environment_vm.talos_worker_02]
+  client_configuration        = talos_machine_secrets.machine_secrets.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.machineconfig_worker_02.machine_configuration
+  node                        = var.talos_worker_02_ip_addr
+  config_patches = [
+    file("${path.module}/templates/workernetwork.yaml.tmpl")
+  ]
+}
+
+resource "talos_machine_configuration_apply" "worker_config_apply_03" {
+  depends_on                  = [proxmox_virtual_environment_vm.talos_worker_03]
+  client_configuration        = talos_machine_secrets.machine_secrets.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.machineconfig_worker_03.machine_configuration
+  node                        = var.talos_worker_03_ip_addr
   config_patches = [
     file("${path.module}/templates/workernetwork.yaml.tmpl")
   ]
@@ -73,7 +108,7 @@ data "talos_cluster_health" "health" {
   control_plane_nodes  = [ var.talos_cp_01_ip_addr ]
   worker_nodes         = [ var.talos_worker_01_ip_addr ]
   endpoints            = data.talos_client_configuration.talosconfig.endpoints
-  timeouts             = { read = "180s" }
+  timeouts             = { read = "240s" }
 }
 
 resource "talos_cluster_kubeconfig" "kubeconfig" {
