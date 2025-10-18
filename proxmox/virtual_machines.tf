@@ -1,17 +1,20 @@
-resource "proxmox_virtual_environment_vm" "talos_cp_01" {
-  name        = "talos-cp-01"
+# Control Plane VMs
+resource "proxmox_virtual_environment_vm" "control_plane" {
+  for_each = { for node in var.control_plane_nodes : node.name => node }
+
+  name        = each.value.name
   description = "Managed by Terraform"
-  tags        = ["terraform"]
+  tags        = ["terraform", "control-plane"]
   node_name   = var.node
   on_boot     = false
 
   cpu {
-    cores = 2
-    type = "x86-64-v2-AES"
+    cores = each.value.cpu_cores
+    type  = "x86-64-v2-AES"
   }
 
   memory {
-    dedicated = 4096
+    dedicated = each.value.memory
   }
 
   agent {
@@ -29,7 +32,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
     file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
-    size         = 35
+    size         = each.value.disk_size
   }
 
   operating_system {
@@ -40,7 +43,7 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
     datastore_id = "local-zfs"
     ip_config {
       ipv4 {
-        address = "${var.talos_cp_01_ip_addr}/24"
+        address = "${each.value.ip}/24"
         gateway = var.default_gateway
       }
       ipv6 {
@@ -50,21 +53,26 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   }
 }
 
-resource "proxmox_virtual_environment_vm" "talos_worker_01" {
-  depends_on = [ proxmox_virtual_environment_vm.talos_cp_01 ]
-  name        = "talos-worker-01"
+# Worker VMs
+resource "proxmox_virtual_environment_vm" "worker" {
+  for_each = { for node in var.worker_nodes : node.name => node }
+
+  # Ensure all control plane nodes are created before workers
+  depends_on = [proxmox_virtual_environment_vm.control_plane]
+
+  name        = each.value.name
   description = "Managed by Terraform"
-  tags        = ["terraform"]
+  tags        = ["terraform", "worker"]
   node_name   = var.node
   on_boot     = false
 
   cpu {
-    cores = 4
-    type = "x86-64-v2-AES"
+    cores = each.value.cpu_cores
+    type  = "x86-64-v2-AES"
   }
 
   memory {
-    dedicated = 4096
+    dedicated = each.value.memory
   }
 
   agent {
@@ -82,7 +90,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
     file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
     file_format  = "raw"
     interface    = "virtio0"
-    size         = 120
+    size         = each.value.disk_size
   }
 
   operating_system {
@@ -93,113 +101,7 @@ resource "proxmox_virtual_environment_vm" "talos_worker_01" {
     datastore_id = "local-zfs"
     ip_config {
       ipv4 {
-        address = "${var.talos_worker_01_ip_addr}/24"
-        gateway = var.default_gateway
-      }
-      ipv6 {
-        address = "dhcp"
-      }
-    }
-  }
-}
-
-resource "proxmox_virtual_environment_vm" "talos_worker_02" {
-  depends_on = [ proxmox_virtual_environment_vm.talos_cp_01 ]
-  name        = "talos-worker-02"
-  description = "Managed by Terraform"
-  tags        = ["terraform"]
-  node_name   = var.node
-  on_boot     = false
-
-  cpu {
-    cores = 4
-    type = "x86-64-v2-AES"
-  }
-
-  memory {
-    dedicated = 4096
-  }
-
-  agent {
-    enabled = false
-  }
-
-  stop_on_destroy = true
-
-  network_device {
-    bridge = "vmbr0"
-  }
-
-  disk {
-    datastore_id = "local-zfs"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
-    file_format  = "raw"
-    interface    = "virtio0"
-    size         = 80
-  }
-
-  operating_system {
-    type = "l26" # Linux Kernel 2.6 - 5.X.
-  }
-
-  initialization {
-    datastore_id = "local-zfs"
-    ip_config {
-      ipv4 {
-        address = "${var.talos_worker_02_ip_addr}/24"
-        gateway = var.default_gateway
-      }
-      ipv6 {
-        address = "dhcp"
-      }
-    }
-  }
-}
-
-resource "proxmox_virtual_environment_vm" "talos_worker_03" {
-  depends_on = [ proxmox_virtual_environment_vm.talos_cp_01 ]
-  name        = "talos-worker-03"
-  description = "Managed by Terraform"
-  tags        = ["terraform"]
-  node_name   = var.node
-  on_boot     = false
-
-  cpu {
-    cores = 4
-    type = "x86-64-v2-AES"
-  }
-
-  memory {
-    dedicated = 4096
-  }
-
-  agent {
-    enabled = false
-  }
-
-  stop_on_destroy = true
-
-  network_device {
-    bridge = "vmbr0"
-  }
-
-  disk {
-    datastore_id = "local-zfs"
-    file_id      = proxmox_virtual_environment_download_file.talos_nocloud_image.id
-    file_format  = "raw"
-    interface    = "virtio0"
-    size         = 80
-  }
-
-  operating_system {
-    type = "l26" # Linux Kernel 2.6 - 5.X.
-  }
-
-  initialization {
-    datastore_id = "local-zfs"
-    ip_config {
-      ipv4 {
-        address = "${var.talos_worker_03_ip_addr}/24"
+        address = "${each.value.ip}/24"
         gateway = var.default_gateway
       }
       ipv6 {

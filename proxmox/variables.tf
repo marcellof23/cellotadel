@@ -14,24 +14,51 @@ variable "cp_vip" {
   default = "192.168.0.202"
 }
 
-variable "talos_cp_01_ip_addr" {
-  type    = string
-  default = "192.168.0.205"
+variable "control_plane_nodes" {
+  description = "List of control plane node configurations"
+  type = list(object({
+    name      = string
+    ip        = string
+    cpu_cores = number
+    memory    = number
+    disk_size = number
+  }))
+  default = [
+    {
+      name      = "talos-cp-01"
+      ip        = "192.168.0.205"
+      cpu_cores = 4
+      memory    = 6144
+      disk_size = 40
+    }
+  ]
 }
 
-variable "talos_worker_01_ip_addr" {
-  type    = string
-  default = "192.168.0.206"
-}
-
-variable "talos_worker_02_ip_addr" {
-  type    = string
-  default = "192.168.0.207"
-}
-
-variable "talos_worker_03_ip_addr" {
-  type    = string
-  default = "192.168.0.208"
+variable "worker_nodes" {
+  description = "List of worker node configurations"
+  type = list(object({
+    name      = string
+    ip        = string
+    cpu_cores = number
+    memory    = number
+    disk_size = number
+  }))
+  default = [
+    {
+      name      = "talos-worker-01"
+      ip        = "192.168.0.206"
+      cpu_cores = 4
+      memory    = 4096
+      disk_size = 180
+    },
+    {
+      name      = "talos-worker-02"
+      ip        = "192.168.0.207"
+      cpu_cores = 4
+      memory    = 4096
+      disk_size = 180
+    },
+  ]
 }
 
 variable "node" {
