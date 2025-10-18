@@ -5,3 +5,4 @@ namespace: nginx
 
 resources:
   - nginx.yaml
+  
