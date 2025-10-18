@@ -18,7 +18,13 @@ Complete guide to deploying your homelab infrastructure using Terraform and Argo
 │  • Provisions Proxmox VMs                           │
 │  • Deploys Talos Linux                              │
 │  • Bootstraps Kubernetes cluster                    │
-│  • Installs ArgoCD                                  │
+└───────────────────┬─────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│            Manual ArgoCD Installation                │
+│  • Install via bootstrap script or Helm             │
+│  • Configure self-management                        │
 └───────────────────┬─────────────────────────────────┘
                     │
                     ▼
@@ -61,7 +67,7 @@ Complete guide to deploying your homelab infrastructure using Terraform and Argo
        name      = "talos-cp-01"
        ip        = "192.168.0.205"
        cpu_cores = 4
-       memory    = 6144
+       memory    = 4096
        disk_size = 40
      }
    ]
@@ -97,9 +103,7 @@ This will:
 1. ✅ Create Proxmox VMs (control plane + workers)
 2. ✅ Install Talos Linux on all nodes
 3. ✅ Bootstrap the Kubernetes cluster
-4. ✅ Install ArgoCD
-5. ✅ Configure ArgoCD for self-management
-6. ✅ Save kubeconfig and talosconfig files
+4. ✅ Save kubeconfig and talosconfig files
 
 ### Step 3: Access Your Cluster
 
@@ -114,7 +118,28 @@ kubectl get nodes
 kubectl get pods -A
 ```
 
-### Step 4: Access ArgoCD
+### Step 4: Install ArgoCD
+
+Run the bootstrap script to install ArgoCD:
+
+```bash
+cd ../apps/argocd/
+./bootstrap-argocd.sh
+```
+
+The script will automatically display the admin password when complete.
+
+Alternatively, install manually:
+```bash
+kubectl create namespace argocd
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+helm install argocd argo/argo-cd --namespace argocd --version 7.7.0 \
+  --set server.service.type=ClusterIP \
+  --set configs.params."server\.insecure"=true
+```
+
+### Step 5: Access ArgoCD
 
 Get the admin password:
 ```bash
@@ -131,7 +156,7 @@ Visit http://localhost:8080 and login with:
 - Username: `admin`
 - Password: (from above command)
 
-### Step 5: Deploy Applications via ArgoCD
+### Step 6: Deploy Applications via ArgoCD
 
 Now deploy your applications using ArgoCD:
 
@@ -184,14 +209,14 @@ kubectl apply -f apps/longhorn/app.yaml
        name      = "talos-cp-01"
        ip        = "192.168.0.205"
        cpu_cores = 4
-       memory    = 6144
+       memory    = 4096
        disk_size = 40
      },
      {
        name      = "talos-cp-02"
        ip        = "192.168.0.209"
        cpu_cores = 4
-       memory    = 6144
+       memory    = 4096
        disk_size = 40
      }
    ]
@@ -295,7 +320,6 @@ kubectl patch application <app-name> -n argocd \
 ├── DEPLOYMENT.md              # This file
 ├── README.md                  # Project overview
 ├── proxmox/                   # Infrastructure as Code
-│   ├── argocd_bootstrap.tf   # ArgoCD installation
 │   ├── cluster.tf            # Talos cluster configuration
 │   ├── virtual_machines.tf   # VM definitions
 │   ├── variables.tf          # Variable definitions
@@ -303,6 +327,9 @@ kubectl patch application <app-name> -n argocd \
 │   └── README.md             # Proxmox setup guide
 └── apps/                      # Application manifests
     ├── argocd/               # ArgoCD configuration
+    │   ├── bootstrap-argocd.sh          # ArgoCD installation script
+    │   ├── argocd-self-management.yaml  # Self-management config
+    │   └── config/                      # Custom configurations
     ├── vault/                # Vault + External Secrets
     ├── immich/               # Immich photo app
     ├── longhorn/             # Storage provider
