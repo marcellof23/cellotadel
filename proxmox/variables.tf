@@ -28,7 +28,7 @@ variable "control_plane_nodes" {
       name      = "talos-cp-01"
       ip        = "192.168.0.205"
       cpu_cores = 4
-      memory    = 6144
+      memory    = 4096
       disk_size = 40
     }
   ]
