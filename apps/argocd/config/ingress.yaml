@@ -7,9 +7,9 @@ spec:
   ingressClassName: tailscale
   tls:
     - hosts:
-      - argocd-app-2
+      - argocd-app
   rules:
-  - host: "argocd-app-2"
+  - host: "argocd-app"
     http:
       paths:
       - path: /

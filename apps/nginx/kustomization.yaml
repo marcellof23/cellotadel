@@ -5,4 +5,4 @@ namespace: nginx
 
 resources:
   - nginx.yaml
-  
+  - ingress.yaml

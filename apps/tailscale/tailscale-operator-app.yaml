@@ -17,13 +17,13 @@ spec:
     # --- Helm Values: How to configure the operator ---
     helm:
       values: |
-      
+    
         # Use the same name as your Talos cluster for consistency!
         clusterName: "homelab-nas"
 
         # Configuration for the proxy that exposes services
         apiServerProxy:
-          mode: 
+          mode: true
         funnel:
           mode: true
           oauth:
