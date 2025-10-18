@@ -9,7 +9,7 @@ spec:
   storageClassName: longhorn # This tells Kubernetes to use Longhorn
   resources:
     requests:
-      storage: 35Gi # Adjust size as needed for your photo library
+      storage: 60Gi # Adjust size as needed for your photo library
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -21,4 +21,4 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 35Gi # Adjust size as needed for your databased
+      storage: 20Gi # Adjust size as needed for your databased
