@@ -8,10 +8,11 @@ metadata:
 spec:
   project: default
 
+  # --- Source: Where the Helm chart lives ---
   source:
-    repoURL: 'https://github.com/marcellof23/cellotadel.git'
-    targetRevision: HEAD
-    path: apps/tailscale
+    repoURL: https://pkgs.tailscale.com/helmcharts
+    chart: tailscale-operator
+    targetRevision: "1.88.2" # Good practice to pin the chart version
 
     # --- Helm Values: How to configure the operator ---
     helm:
