@@ -1,0 +1,110 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source - ArgoCD Helm chart
+  source:
+    repoURL: 'https://argoproj.github.io/argo-helm'
+    targetRevision: 7.7.0
+    chart: argo-cd
+    helm:
+      values: |
+        # Server configuration
+        server:
+          service:
+            type: ClusterIP
+          # Insecure mode (disable TLS) - behind ingress
+          extraArgs:
+            - --insecure
+          
+          # Additional configurations
+          config:
+            # Add your custom configuration here
+            # Example: SSO, repositories, etc.
+            
+        # Controller configuration
+        controller:
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+
+        # Repo server configuration  
+        repoServer:
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+        # Redis configuration
+        redis:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+        # ApplicationSet controller
+        applicationSet:
+          enabled: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+        # Notifications controller
+        notifications:
+          enabled: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+  # Destination
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Respect differences in live vs desired state for specific fields
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences for fields that change at runtime
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+

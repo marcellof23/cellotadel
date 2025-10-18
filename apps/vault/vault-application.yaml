@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source of the application - HashiCorp Helm chart
+  source:
+    repoURL: 'https://helm.releases.hashicorp.com'
+    targetRevision: 0.28.1  # Vault Helm chart version
+    chart: vault
+    helm:
+      values: |
+        server:
+          # Dev mode for homelab (NOT for production)
+          dev:
+            enabled: true
+          # Resources
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          # Data storage (for production mode)
+          dataStorage:
+            enabled: true
+            size: 10Gi
+            storageClass: longhorn
+        ui:
+          enabled: true
+          serviceType: ClusterIP
+
+  # Destination cluster and namespace
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: vault
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

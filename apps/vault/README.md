@@ -1,133 +1,250 @@
 # Vault Setup Guide
 
-## Step 1: Install and Configure Vault
+This guide shows you how to integrate HashiCorp Vault with Kubernetes using ArgoCD for GitOps deployment and External Secrets Operator for secret management.
 
-### Add the HashiCorp Helm repo
+In this tutorial, I'll provide you step-by-step how to connect Vault to a Kubernetes deployment. In this case, I use Immich as an example.
 
-```bash
-helm repo add hashicorp https://helm.releases.hashicorp.com
-helm repo update
+## Architecture Overview
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
+│   ArgoCD    │────▶│      Vault       │◀────│ External    │
+│             │     │   (Dev Mode)     │     │  Secrets    │
+└─────────────┘     └──────────────────┘     │  Operator   │
+                            │                 └─────────────┘
+                            │                        │
+                            ▼                        ▼
+                    ┌──────────────┐        ┌──────────────┐
+                    │ Kubernetes   │        │ SecretStore  │
+                    │   Secrets    │◀───────│ External     │
+                    │              │        │   Secret     │
+                    └──────────────┘        └──────────────┘
 ```
 
-### Install Vault
+## Quick Start
 
-Install Vault in dev mode for simplicity. For production, you must follow the full production hardening guide.
+### Step 1: Deploy Vault via ArgoCD
 
-```bash
-helm install vault hashicorp/vault --namespace vault --create-namespace \
-  --set "server.dev.enabled=true"
-```
-
-### Initialize and Unseal Vault
-
-Get a shell into the Vault pod and initialize it. In a real setup, you would run `vault operator init` and unseal the vault, storing the unseal keys and root token securely. For this dev setup, the root token is just `root`.
+Apply the Vault ArgoCD Application:
 
 ```bash
-# Find the pod name
-kubectl get pods -n vault
-
-# Exec into the pod
-kubectl exec -it vault-0 -n vault -- /bin/sh
+kubectl apply -f apps/vault/vault-application.yaml
 ```
 
-Inside the Vault pod shell:
+This will:
+- Install Vault in dev mode in the `vault` namespace
+- Expose the Vault UI as a ClusterIP service
+- Use the root token: `root` (dev mode only)
+
+### Step 2: Deploy External Secrets Operator
+
+Apply the External Secrets Operator ArgoCD Application:
 
 ```bash
-# Set the vault address (for this shell session)
-export VAULT_ADDR='http://127.0.0.1:8200'
-
-# Store the Immich database password in Vault
-# This creates a secret named 'immich' with a key 'DB_PASSWORD' inside it.
-vault kv put secret/immich DB_PASSWORD="YOUR_SUPER_SECRET_PASSWORD"
-
-# Exit the pod
-exit
+kubectl apply -f apps/vault/external-secrets-application.yaml
 ```
 
-## Step 2: Install and Configure External Secrets Operator (ESO)
+This will:
+- Install External Secrets Operator in the `external-secrets` namespace
+- Install all necessary CRDs (SecretStore, ExternalSecret, etc.)
 
-### Add the ESO Helm repo
+### Step 3: Configure Vault
+
+Apply the Vault configuration:
 
 ```bash
-helm repo add external-secrets https://charts.external-secrets.io
-helm repo update
+kubectl apply -f apps/vault/vault-config-application.yaml
 ```
 
-### Install External Secrets Operator
+This will automatically:
+- Enable Kubernetes authentication in Vault
+- Configure Kubernetes auth to talk to your cluster
+- Create policies for reading secrets
+- Create roles binding the policies to the External Secrets Operator service account
+- Store initial secrets (you need to update the secrets in `config/vault-secrets-job.yaml`)
 
-```bash
-helm install external-secrets external-secrets/external-secrets \
-  --namespace external-secrets --create-namespace
+### Step 4: Update Your Secrets
+
+Before applying the configuration, update the secrets in `apps/vault/config/vault-secrets-job.yaml`:
+
+```yaml
+# Change this line:
+vault kv put secret/immich \
+  DB_PASSWORD="YOUR_SUPER_SECRET_PASSWORD"
 ```
 
-## Step 3: Configure Vault and ESO to Talk to Each Other
+## Using Vault with Your Applications
 
-We need to give ESO permission to read secrets from Vault. We'll use the Kubernetes Auth Method, which allows a Kubernetes Service Account to authenticate with Vault.
+### 1. Create a SecretStore
 
-### Enable and Configure Kubernetes Auth in Vault
-
-```bash
-# Exec back into your Vault pod
-kubectl exec -it vault-0 -n vault -- /bin/sh
-```
-
-Inside the Vault pod shell:
-
-```bash
-export VAULT_ADDR='http://127.0.0.1:8200'
-export VAULT_TOKEN='root' # Use your root token here
-
-# 1. Enable Kubernetes auth
-vault auth enable kubernetes
-
-# 2. Configure it to talk to the cluster's API server
-vault write auth/kubernetes/config \
-  kubernetes_host="https://kubernetes.default.svc"
-
-# 3. Create a policy that allows reading the immich secret
-vault policy write immich-policy - <<EOF
-path "secret/data/immich" {
-  capabilities = ["read"]
-}
-EOF
-
-# 4. Create a role that binds the policy to the ESO Service Account
-# This says "Any service account named 'external-secrets' in the 'external-secrets'
-# namespace is allowed to assume the 'immich-policy' role."
-vault write auth/kubernetes/role/external-secrets \
-  bound_service_account_names=external-secrets \
-  bound_service_account_namespaces=external-secrets \
-  policies=immich-policy \
-  ttl=24h
-
-# Exit the pod
-exit
-```
-
-### Create a SecretStore
-
-This is a Kubernetes resource that tells ESO how to connect to Vault. This file goes into your Git repository for Argo CD to manage.
-
-Create a file `apps/immich/vault-secret-store.yaml`:
+In your application namespace (e.g., `immich`), create a SecretStore that references Vault:
 
 ```yaml
 apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
   name: vault-backend
-  namespace: immich # Create this in the same namespace as Immich
+  namespace: immich
 spec:
   provider:
     vault:
-      # The ClusterIP service of your Vault instance
       server: "http://vault.vault.svc.cluster.local:8200"
-      path: "secret" # The default KV engine path
-      version: "v2"  # Use v2 for KV secrets
+      path: "secret"
+      version: "v2"
       auth:
-        # Authenticate using the Kubernetes Service Account method
         kubernetes:
           mountPath: "kubernetes"
-          role: "external-secrets" # The role we created in Vault
-          # The SA that ESO runs as, which is bound to the role
+          role: "external-secrets"
           serviceAccountRef:
             name: "external-secrets"
+```
+
+### 2. Create an ExternalSecret
+
+Create an ExternalSecret resource to pull secrets from Vault:
+
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: immich-secret
+  namespace: immich
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: immich-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: DB_PASSWORD
+      remoteRef:
+        key: immich
+        property: DB_PASSWORD
+```
+
+### 3. Reference the Secret in Your Deployment
+
+```yaml
+env:
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: immich-secret
+        key: DB_PASSWORD
+```
+
+## Troubleshooting
+
+### Secret Not Found Error
+
+If you see `message: secret "immich-secret" not found`, you need to restart your deployment:
+
+```bash
+kubectl rollout restart deployment/<your-deployment> -n <namespace>
+```
+
+This is because the deployment will consume the new secret after restart, unless it will point to the previous secret.
+
+### Check Vault Status
+
+```bash
+kubectl exec -it vault-0 -n vault -- vault status
+```
+
+### Check External Secrets Operator Logs
+
+```bash
+kubectl logs -n external-secrets -l app.kubernetes.io/name=external-secrets
+```
+
+### Verify SecretStore Status
+
+```bash
+kubectl get secretstore -n <your-namespace>
+kubectl describe secretstore vault-backend -n <your-namespace>
+```
+
+### Verify ExternalSecret Status
+
+```bash
+kubectl get externalsecret -n <your-namespace>
+kubectl describe externalsecret <name> -n <your-namespace>
+```
+
+## Adding Secrets for New Applications
+
+### 1. Store the Secret in Vault
+
+Edit `apps/vault/config/vault-secrets-job.yaml` and add your secret:
+
+```bash
+vault kv put secret/myapp \
+  API_KEY="your-api-key" \
+  DATABASE_URL="postgresql://..."
+```
+
+### 2. Create a Policy (Optional)
+
+If you want separate policies per app, edit `apps/vault/config/vault-init-job.yaml`:
+
+```bash
+vault policy write myapp-policy - <<EOF
+path "secret/data/myapp" {
+  capabilities = ["read"]
+}
+EOF
+```
+
+### 3. Update the Role
+
+Add the new policy to the External Secrets role:
+
+```bash
+vault write auth/kubernetes/role/external-secrets \
+  bound_service_account_names=external-secrets \
+  bound_service_account_namespaces=external-secrets \
+  policies=immich-policy,myapp-policy \
+  ttl=24h
+```
+
+### 4. Create SecretStore and ExternalSecret
+
+Follow the pattern shown above in your application's namespace.
+
+## Production Considerations
+
+⚠️ **This setup uses Vault in dev mode for homelab/testing purposes.**
+
+For production, you should:
+1. Disable dev mode and use proper storage backend
+2. Initialize Vault properly with `vault operator init`
+3. Store unseal keys securely (consider using Shamir's Secret Sharing)
+4. Use proper TLS certificates
+5. Implement proper backup strategy
+6. Use separate policies per application
+7. Consider using Vault Agent Injector for pod-level secrets
+8. Enable audit logging
+
+## File Structure
+
+```
+apps/vault/
+├── README.md                           # This file
+├── vault-application.yaml              # ArgoCD App for Vault
+├── external-secrets-application.yaml   # ArgoCD App for External Secrets Operator
+├── vault-config-application.yaml       # ArgoCD App for Vault configuration
+└── config/
+    ├── kustomization.yaml             # Kustomize config
+    ├── vault-init-job.yaml            # Job to initialize Vault auth
+    └── vault-secrets-job.yaml         # Job to store initial secrets
+```
+
+## Next Steps
+
+After deployment:
+1. Access Vault UI via port-forward: `kubectl port-forward -n vault svc/vault 8200:8200`
+2. Login with token `root` (dev mode)
+3. Verify your secrets are stored: `vault kv get secret/immich`
+4. Deploy your applications with ExternalSecret resources
