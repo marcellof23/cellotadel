@@ -3,13 +3,17 @@ kind: Ingress
 metadata:
   name: argocd-app-nginx-ingress
   namespace: nginx
+  annotations:
+    # This annotation tells cert-manager to get a certificate for this Ingress
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: tailscale
   tls:
     - hosts:
-      - nginx-app
+      - nginx.marcello-faria.com
+      secretName: nginx-tls-secret
   rules:
-  - host: "nginx-app"
+  - host: "nginx"
     http:
       paths:
       - path: /
