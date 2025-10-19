@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-      - nginx.marcello-faria.com
-      secretName: nginx-tls-secret
+      - test.nginx.marcello-faria.com
+      secretName: test-nginx-tls-secret
   rules:
-  - host: "nginx.marcello-faria.com"
+  - host: "test.nginx.marcello-faria.com"
     http:
       paths:
       - path: /
