@@ -1,15 +1,16 @@
 # Cellotadel - Homelab Infrastructure as Code
 
-This repository contains Terraform configurations for setting up a Kubernetes cluster using Talos Linux on Proxmox VE. The project automates the deployment of a homelab environment with a focus on reliability and security.
+This repository contains Terraform configurations for setting up a Kubernetes cluster using Talos Linux on Proxmox VE, with GitOps-based application deployment via ArgoCD. The project automates the deployment of a homelab environment with a focus on reliability and security.
 
 ## Overview
 
 Cellotadel automates the creation of a Kubernetes cluster with the following components:
-- Proxmox VE as the virtualization platform
-- Talos Linux as the operating system
-- Single control plane node with high availability preparation
-- Worker node for running workloads
-- Automated configuration and bootstrap process
+- **Infrastructure**: Proxmox VE virtualization platform
+- **Operating System**: Talos Linux (immutable, secure Kubernetes OS)
+- **Cluster**: Dynamically scalable control plane and worker nodes
+- **GitOps**: ArgoCD for declarative application deployment
+- **Secrets**: Vault + External Secrets Operator for secret management
+- **Automated**: Terraform for infrastructure, ArgoCD for applications
 
 ## Prerequisites
 
@@ -25,63 +26,58 @@ Cellotadel automates the creation of a Kubernetes cluster with the following com
 - `hashicorp/null` (v3.2.4)
 - `hashicorp/local` (v2.4.0)
 
-## Configuration
+## Quick Start
 
-### Variables
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide.
 
-Key variables that need to be configured:
+```bash
+# 1. Deploy infrastructure
+cd proxmox/
+terraform apply
+
+# 2. Install ArgoCD
+cd ../argocd/
+./bootstrap-argocd.sh
+
+# 3. Deploy applications
+kubectl apply -f apps/vault/vault-application.yaml
+kubectl apply -f apps/immich/argocd-application.yaml
+```
+
+## Project Structure
+
+```
+cellotadel/
+├── DEPLOYMENT.md              # Complete deployment walkthrough
+├── proxmox/                   # Infrastructure as Code
+│   ├── cluster.tf            # Talos cluster configuration
+│   ├── virtual_machines.tf   # Dynamic VM provisioning
+│   ├── variables.tf          # Variable definitions
+│   └── proxmox.tfvars        # Your cluster configuration
+└── argocd/                    # GitOps and applications
+    ├── bootstrap-argocd.sh   # ArgoCD installation script
+    ├── argocd-self-management.yaml
+    ├── argocd-config-application.yaml
+    └── apps/                  # All application manifests
+        ├── vault/            # Vault + External Secrets
+        ├── immich/           # Photo management
+        ├── longhorn/         # Storage provider
+        ├── metallb/          # Load balancer
+        ├── nginx/            # Ingress controller
+        └── tailscale/        # VPN networking
+```
+
+## Scaling
+
+The infrastructure is fully dynamic - add/remove nodes by editing lists in `proxmox/proxmox.tfvars`:
 
 ```hcl
-cluster_name         = "homelab-nas"
-kubernetes_version   = "1.32.0"
-default_gateway     = "192.168.0.1"
-cp_vip             = "192.168.0.202"
+worker_nodes = [
+  { name = "talos-worker-01", ip = "192.168.0.206", cpu_cores = 4, memory = 4096, disk_size = 180 },
+  { name = "talos-worker-02", ip = "192.168.0.207", cpu_cores = 4, memory = 4096, disk_size = 180 },
+  # Add more workers here...
+]
 ```
-
-### Network Configuration
-
-The cluster is configured with the following IP addresses:
-- Control Plane Node: 192.168.0.205
-- Worker Node: 192.168.0.206
-- Control Plane VIP: 192.168.0.202
-
-## Virtual Machine Specifications
-
-### Control Plane Node
-- 2 CPU cores (x86-64-v2-AES)
-- 4GB RAM
-- 20GB disk
-- Network bridge: vmbr0
-
-### Worker Node
-- 4 CPU cores (x86-64-v2-AES)
-- 4GB RAM
-- 20GB disk
-- Network bridge: vmbr0
-
-## Usage
-
-1. Configure your Proxmox credentials in `proxmox.tfvars`:
-```hcl
-pve_api_url = "https://your-proxmox-server:8006/api2/json"
-pve_user = "your-user@pam"
-pve_password = "your-password"
-node = "your-proxmox-node"
-```
-
-2. Initialize Terraform:
-```bash
-terraform init
-```
-
-3. Apply the configuration:
-```bash
-terraform apply -var-file="proxmox.tfvars"
-```
-
-4. After successful deployment, the kubeconfig and talosconfig will be automatically saved to:
-- `~/.kube/config`
-- `~/.talos/config`
 
 ## Features
 

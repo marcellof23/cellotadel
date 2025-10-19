@@ -123,7 +123,7 @@ kubectl get pods -A
 Run the bootstrap script to install ArgoCD:
 
 ```bash
-cd ../apps/argocd/
+cd ../argocd/
 ./bootstrap-argocd.sh
 ```
 
@@ -162,17 +162,17 @@ Now deploy your applications using ArgoCD:
 
 ```bash
 # Deploy Vault
-kubectl apply -f apps/vault/vault-application.yaml
+kubectl apply -f argocd/apps/vault/vault-application.yaml
 
 # Deploy External Secrets Operator
-kubectl apply -f apps/vault/external-secrets-application.yaml
+kubectl apply -f argocd/apps/vault/external-secrets-application.yaml
 
 # Deploy Vault configuration
-kubectl apply -f apps/vault/vault-config-application.yaml
+kubectl apply -f argocd/apps/vault/vault-config-application.yaml
 
 # Deploy other applications
-kubectl apply -f apps/immich/argocd-application.yaml
-kubectl apply -f apps/longhorn/app.yaml
+kubectl apply -f argocd/apps/immich/argocd-application.yaml
+kubectl apply -f argocd/apps/longhorn/app.yaml
 # ... etc
 ```
 
@@ -231,14 +231,14 @@ kubectl apply -f apps/longhorn/app.yaml
 
 ### Deploy New Application
 
-1. Create application manifests in `apps/<app-name>/`
+1. Create application manifests in `argocd/apps/<app-name>/`
 2. Create ArgoCD Application manifest
 3. Apply via kubectl or ArgoCD UI
 4. ArgoCD automatically syncs from Git
 
 ### Update Existing Application
 
-1. Edit files in `apps/<app-name>/`
+1. Edit files in `argocd/apps/<app-name>/`
 2. Commit and push to Git
 3. ArgoCD automatically syncs changes (if automated sync enabled)
 
@@ -325,22 +325,23 @@ kubectl patch application <app-name> -n argocd \
 │   ├── variables.tf          # Variable definitions
 │   ├── proxmox.tfvars        # Your configuration
 │   └── README.md             # Proxmox setup guide
-└── apps/                      # Application manifests
-    ├── argocd/               # ArgoCD configuration
-    │   ├── bootstrap-argocd.sh          # ArgoCD installation script
-    │   ├── argocd-self-management.yaml  # Self-management config
-    │   └── config/                      # Custom configurations
-    ├── vault/                # Vault + External Secrets
-    ├── immich/               # Immich photo app
-    ├── longhorn/             # Storage provider
-    ├── metallb/              # Load balancer
-    ├── nginx/                # Ingress controller
-    └── tailscale/            # VPN networking
+└── argocd/                    # GitOps and applications
+    ├── bootstrap-argocd.sh   # ArgoCD installation script
+    ├── argocd-self-management.yaml  # Self-management config
+    ├── argocd-config-application.yaml
+    ├── config/               # Custom ArgoCD configurations
+    └── apps/                 # All application manifests
+        ├── vault/            # Vault + External Secrets
+        ├── immich/           # Immich photo app
+        ├── longhorn/         # Storage provider
+        ├── metallb/          # Load balancer
+        ├── nginx/            # Ingress controller
+        └── tailscale/        # VPN networking
 ```
 
 ## Next Steps
 
-1. **Configure Vault secrets** - Update `apps/vault/config/vault-secrets-job.yaml`
+1. **Configure Vault secrets** - Update `argocd/apps/vault/config/vault-secrets-job.yaml`
 2. **Set up ingress** - Configure your domain and TLS certificates
 3. **Enable monitoring** - Add Prometheus + Grafana
 4. **Configure backups** - Set up Longhorn backup targets

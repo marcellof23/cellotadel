@@ -1,18 +1,15 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: first-pool
+  name: public-ip-pool
   namespace: metallb-system
 spec:
   # Replace this with a range of unused IPs from your LAN!
   addresses:
-  - 192.168.0.210-192.168.0.220
+  - 192.168.0.235-192.168.0.240
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
   name: homelab-lb
   namespace: metallb-system
-spec:
-  ipAddressPools:
-  - first-pool
