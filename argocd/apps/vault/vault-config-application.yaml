@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source of the application's manifests
+  source:
+    repoURL: 'https://github.com/marcellof23/cellotadel.git'
+    targetRevision: HEAD
+    path: argocd/apps/vault/config
+
+  # Destination cluster and namespace
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: vault
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

@@ -1,0 +1,8 @@
+apiVersion: longhorn.io/v1beta2
+kind: BackupTarget
+metadata:
+  name: default # The name MUST be "default"
+  namespace: longhorn-system
+spec:
+  backupTargetURL: "s3://homelab-cello-backup-storage@ap-southeast-2/homelab-backup/"
+  credentialSecret: "s3-backup-secret" # The name of the secret you created

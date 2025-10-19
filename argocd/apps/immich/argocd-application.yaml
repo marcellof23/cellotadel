@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: immich
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  # Source of the application's manifests
+  source:
+    repoURL: 'https://github.com/marcellof23/cellotadel.git'
+    targetRevision: HEAD
+    path: argocd/apps/immich
+    kustomize: {}
+
+  # Destination cluster and namespace
+  destination:
+    # URL of the cluster to deploy to (use this for the local cluster)
+    server: 'https://kubernetes.default.svc'
+    # The namespace to deploy the Immich resources into
+    namespace: immich
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      # Automatically prune resources that are removed from Git
+      prune: true
+      # Automatically apply changes detected in Git
+      selfHeal: true
+    # Use 'CreateNamespace=true' if the namespace might not exist yet
+    syncOptions:
+      - CreateNamespace=true
